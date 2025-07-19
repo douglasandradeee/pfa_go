@@ -28,4 +28,5 @@ func main() {
 	}
 	fmt.Println("Order ID:", output.ID)
 	fmt.Println("Final Price:", output.FinalPrice)
+	// Uncomment the following lines to test the repository methods
 }
