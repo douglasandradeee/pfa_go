@@ -31,15 +31,6 @@ func TestGivenEmptyTax_WhenCreateAnewOrder_ThenShouldReceiveAndError(t *testing.
 	assert.Error(t, order.IsValid(), "Expected error for empty tax")
 }
 
-func TestGivenEmptyFinalPrice_WhenCreateAnewOrder_ThenShouldReceiveAndError(t *testing.T) {
-	order := entity.Order{
-		ID:    uuid.NewString(),
-		Price: 1,
-		Tax:   1,
-	}
-	assert.Error(t, order.IsValid(), "Expected error for empty final price")
-}
-
 func TestGivenNegativePrice_WhenCreateAnewOrder_ThenShouldReceiveAndError(t *testing.T) {
 	order := entity.Order{
 		ID:         uuid.NewString(),
@@ -60,26 +51,51 @@ func TestGivenNegativeTax_WhenCreateAnewOrder_ThenShouldReceiveAndError(t *testi
 	assert.Error(t, order.IsValid(), "Expected error for negative tax")
 }
 
-func TestGivenNegativeFinalPrice_WhenCreateAnewOrder_ThenShouldReceiveAndError(t *testing.T) {
-	order := entity.Order{
-		ID:         uuid.NewString(),
-		Price:      1,
-		Tax:        1,
-		FinalPrice: -1.5,
-	}
-	assert.Error(t, order.IsValid(), "Expected error for negative final price")
-}
-
 func TestGivenAValidParams_WhenCallNewOrder_ThenShould_ReceiveCreateOrderWithAllParams(t *testing.T) {
 	order, err := entity.NewOrder(
 		"123",
 		100.0,
 		10.0,
-		110.0,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, "123", order.ID)
 	assert.Equal(t, 100.0, order.Price)
 	assert.Equal(t, 10.0, order.Tax)
-	assert.Equal(t, 110.0, order.FinalPrice)
+}
+
+func TestGivenAValidParams_WhenCallCalculateFinalPrice_ThenShouldCalculeteFinalPriceAndSetItOnFinalPriceProperty(t *testing.T) {
+	order, err := entity.NewOrder("123", 10, 2)
+	assert.NoError(t, err)
+	err = order.CalculateFinalPrice()
+	assert.NoError(t, err)
+	assert.Equal(t, 12.0, order.FinalPrice)
+}
+
+func TestGivenInvalidOrder_WhenCallCalculateFinalPrice_ThenShouldReturnError(t *testing.T) {
+	// Testando com ordem inválida (preço negativo)
+	order := &entity.Order{
+		ID:    "123",
+		Price: -10,
+		Tax:   2,
+	}
+	err := order.CalculateFinalPrice()
+	assert.Error(t, err)
+	assert.Equal(t, 0.0, order.FinalPrice) // FinalPrice não deve ser alterado
+}
+
+func TestGivenInvalidParams_WhenCallNewOrder_ThenShouldReturnError(t *testing.T) {
+	// Testando com parâmetros inválidos (taxa negativa)
+	order, err := entity.NewOrder("123", 10, -2)
+	assert.Error(t, err)
+	assert.Nil(t, order)
+
+	// Testando com parâmetros inválidos (ID vazio)
+	order, err = entity.NewOrder("", 10, 2)
+	assert.Error(t, err)
+	assert.Nil(t, order)
+
+	// Testando com parâmetros inválidos (preço zero)
+	order, err = entity.NewOrder("123", 0, 2)
+	assert.Error(t, err)
+	assert.Nil(t, order)
 }
